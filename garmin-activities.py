@@ -8,20 +8,20 @@ import os
 local_tz = pytz.timezone('America/Toronto')
 
 ACTIVITY_ICONS = {
-    "Running": "https://img.icons8.com/?size=100&id=k1l1XFkME39t&format=png&color=000000"
-    ,"Treadmill Running": "https://img.icons8.com/?size=100&id=9794&format=png&color=000000"
-    ,"Cycling": "https://img.icons8.com/?size=100&id=47443&format=png&color=000000"
-    ,"Indoor Cycling": "https://img.icons8.com/?size=100&id=47443&format=png&color=000000"
-    ,"Swimming": "https://img.icons8.com/?size=100&id=9777&format=png&color=000000"
-    ,"Indoor Cardio": "https://img.icons8.com/?size=100&id=62779&format=png&color=000000"
-    ,"Walking": "https://img.icons8.com/?size=100&id=9807&format=png&color=000000"
-    ,"Pilates": "https://img.icons8.com/?size=100&id=9774&format=png&color=000000"
-    ,"Yoga": "https://img.icons8.com/?size=100&id=9783&format=png&color=000000"
-    ,"Hiking": "https://img.icons8.com/?size=100&id=9844&format=png&color=000000"
-    ,"Rowing": "https://img.icons8.com/?size=100&id=24889&format=png&color=000000"
-    ,"Breathwork": "https://img.icons8.com/?size=100&id=9798&format=png&color=000000"
-    ,"Strength Training": "https://img.icons8.com/?size=100&id=107640&format=png&color=000000"
-    ,"Stretching": "https://img.icons8.com/?size=100&id=djfOcRn1m_kh&format=png&color=000000"
+    "Running": "https://img.icons8.com/?size=100&id=k1l1XFkME39t&format=png&color=000000",
+    "Treadmill Running": "https://img.icons8.com/?size=100&id=9794&format=png&color=000000",
+    "Cycling": "https://img.icons8.com/?size=100&id=47443&format=png&color=000000",
+    "Indoor Cycling": "https://img.icons8.com/?size=100&id=47443&format=png&color=000000",
+    "Swimming": "https://img.icons8.com/?size=100&id=9777&format=png&color=000000",
+    "Indoor Cardio": "https://img.icons8.com/?size=100&id=62779&format=png&color=000000",
+    "Walking": "https://img.icons8.com/?size=100&id=9807&format=png&color=000000",
+    "Pilates": "https://img.icons8.com/?size=100&id=9774&format=png&color=000000",
+    "Yoga": "https://img.icons8.com/?size=100&id=9783&format=png&color=000000",
+    "Hiking": "https://img.icons8.com/?size=100&id=9844&format=png&color=000000",
+    "Rowing": "https://img.icons8.com/?size=100&id=24889&format=png&color=000000",
+    "Breathwork": "https://img.icons8.com/?size=100&id=9798&format=png&color=000000",
+    "Strength Training": "https://img.icons8.com/?size=100&id=107640&format=png&color=000000",
+    "Stretching": "https://img.icons8.com/?size=100&id=djfOcRn1m_kh&format=png&color=000000",
     # Add more mappings as needed
 }
 

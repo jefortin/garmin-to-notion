@@ -3,71 +3,26 @@ from typing import Literal, Annotated, Union
 from pydantic import BaseModel, Field, UUID4
 
 
-class DatabaseColumnText(BaseModel):
-    """
-    See: https://developers.notion.com/reference/property-object#rich-text
-    """
-
-    id: str
-    name: str
-    type: Literal["rich_text"]
-    # The `rich_text` property is always empty.
-
-
-class DatabaseColumnTitle(BaseModel):
-    """
-    See: https://developers.notion.com/reference/property-object#title
-    """
-
-    id: str
-    type: Literal["title"]
-    # The `title` property is always empty.
-
-
-class DatabaseColumnNumber(BaseModel):
-    """
-    See: https://developers.notion.com/reference/property-object#number
-    """
-
-    class NumberFormat(BaseModel):
-        format: Literal['number', 'number_with_commas', 'percent', 'dollar']  # See link for full list
-
-    id: str
-    type: Literal["number"]
-    format: NumberFormat
-
-
-class DatabaseColumnDate(BaseModel):
-    """
-    See: https://developers.notion.com/reference/property-object#date
-    """
-
-    id: str
-    type: Literal["date"]
-    # The `date` property is always empty.
-
+# region database
 
 class DatabaseColumn(BaseModel):
     id: str
     name: str
-
-
-# # Field type representing a Notion database column.
-# # See: https://developers.notion.com/docs/working-with-databases#database-properties
-# DatabaseColumn = Annotated[
-#     Union[
-#         DatabaseColumnText,
-#         DatabaseColumnTitle,
-#         DatabaseColumnNumber,
-#         DatabaseColumnDate,
-#     ],
-#     Field(discriminator='type'),
-# ]
+    type: str
 
 
 class TestDatabase(BaseModel):
     id: UUID4
     properties: dict[str, DatabaseColumn]
+
+
+# endregion database
+
+# region columns
+
+
+
+# endregion columns
 
 
 if __name__ == '__main__':
