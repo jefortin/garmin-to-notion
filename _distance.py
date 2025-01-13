@@ -7,7 +7,7 @@ class DistanceUnit(Enum):
     KILOMETER = 'km'
     METER = 'm'
 
-    __unit_in_meters: dict[DistanceUnit, float] = {
+    __unit_in_meters: dict[str, float] = {
         KILOMETER: 1000,
         METER: 1,
     }
@@ -19,8 +19,8 @@ class DistanceUnit(Enum):
         i.e. `X * conversion_ratio = Y` where `X` is the value in the current unit and `Y` is the value in the other
         unit.
         """
-        self.__unit_in_meters: dict[DistanceUnit, float]  # Enum scrambles type hint without this line.
-        return self.__unit_in_meters[self] / self.__unit_in_meters[new_distance_unit]
+        self.__unit_in_meters: dict[str, float]  # Enum scrambles type hint without this line.
+        return self.__unit_in_meters[self.value] / self.__unit_in_meters[new_distance_unit.value]
 
 
 class Distance:

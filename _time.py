@@ -9,7 +9,7 @@ class TimeUnit(Enum):
     SECOND = 's'
     MILLISECOND = 'ms'
 
-    __unit_in_seconds: dict[TimeUnit, float] = {
+    __unit_in_seconds: dict[str, float] = {
         HOUR: 3600,
         MINUTE: 60,
         SECOND: 1,
@@ -23,5 +23,5 @@ class TimeUnit(Enum):
         i.e. `X * conversion_ratio = Y` where `X` is the value in the current unit and `Y` is the value in the other
         unit.
         """
-        self.__unit_in_seconds: dict[TimeUnit, float]  # Enum scrambles type hint without this line.
-        return self.__unit_in_seconds[self] / self.__unit_in_seconds[new_time_unit]
+        self.__unit_in_seconds: dict[str, float]  # Enum scrambles type hint without this line.
+        return self.__unit_in_seconds[self.value] / self.__unit_in_seconds[new_time_unit.value]

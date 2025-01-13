@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from datetime import timedelta
-from enum import Enum
 from functools import cached_property
 from typing import Literal, Annotated, Optional
 
 from pydantic import BaseModel, Field, UUID4, NaiveDatetime, AliasPath, HttpUrl, computed_field, BeforeValidator
+from pydantic.experimental.pipeline import validate_as
 
 from _distance import DistanceUnit, Distance
 from _pace import Pace
@@ -107,6 +106,31 @@ class GarminActivity(BaseModel):
     ] = Field(None, validation_alias='anaerobicTrainingEffectMessage')
     anaerobic_score: Optional[float] = Field(None, validation_alias='anaerobicTrainingEffect')
 
+    distance: Annotated[
+        Distance,
+        validate_as(float)
+        .transform(lambda distance_meters: Distance(distance_meters, DistanceUnit.METER)),
+    ] = Field(..., validation_alias='distance')  # TODO: None if 0?
+    duration: Annotated[
+        timedelta,
+        validate_as(float)
+        .transform(lambda seconds: timedelta(seconds=seconds)),
+    ] = Field(..., validation_alias='duration')
+    average_speed: Annotated[
+        float,
+        validate_as(float)
+        .transform(lambda speed_meter_per_second: Speed(speed_meter_per_second, DistanceUnit.METER, TimeUnit.SECOND)),
+    ] = Field(..., validation_alias='averageSpeed')  # TODO: None if 0?
+    average_pace: Annotated[
+        Pace,
+        validate_as(float)
+        .transform(
+            lambda speed_meter_per_second:
+            0 if speed_meter_per_second == 0
+            else Pace(1 / speed_meter_per_second, TimeUnit.SECOND, DistanceUnit.METER)
+        ),
+    ] = Field(..., validation_alias='averageSpeed')  # TODO: None if 0?
+
     # __distance_meters: float = Field(..., alias='distance')  # Private to prefer using the `distance` field instead.
     # __duration_seconds: float = Field(..., alias='duration')  # Private to prefer using the `duration` instead.
     # __average_speed_meter_per_second: float = Field(..., alias='averageSpeed')
@@ -116,21 +140,6 @@ class GarminActivity(BaseModel):
     def icon_url(self) -> HttpUrl | None:
         return ACTIVITY_ICONS.get(self.activity_type)
 
-    # @computed_field()
-    # @cached_property
-    # def distance(self) -> Distance:
-    #     return Distance(self.__distance_meters, DistanceUnit.METER)
-    #
-    # @computed_field()
-    # @cached_property
-    # def duration(self) -> timedelta:
-    #     return timedelta(seconds=self.__duration_seconds)
-    #
-    # @computed_field()
-    # @cached_property
-    # def average_speed(self) -> Speed:
-    #     return Speed(self.__average_speed_meter_per_second, DistanceUnit.METER, TimeUnit.SECOND)
-    #
     # @computed_field()
     # @cached_property
     # def average_pace(self) -> Pace:
@@ -442,8 +451,6 @@ def get_fake_activities() -> list[dict]:
 
 if __name__ == '__main__':
     import os
-    from garminconnect import Garmin
-    from notion_client import Client
 
     garmin_email = os.getenv("GARMIN_EMAIL")
     garmin_password = os.getenv("GARMIN_PASSWORD")
@@ -465,6 +472,7 @@ if __name__ == '__main__':
     # get Garmin activities
     # garmin_activities = garmin_client.get_activities(0, 10)
     raw_garmin_activities = get_fake_activities()
+    GarminActivity.model_validate(raw_garmin_activities[0]).distance.convert_to(DistanceUnit.KILOMETER)
     garmin_activities = [
         GarminActivity.model_validate(activity)
         for activity in raw_garmin_activities
