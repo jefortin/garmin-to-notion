@@ -4,7 +4,7 @@ from abc import abstractmethod
 from datetime import timedelta
 from enum import Enum
 from functools import cached_property
-from typing import Literal, Annotated
+from typing import Literal, Annotated, Optional
 
 from pydantic import BaseModel, Field, UUID4, NaiveDatetime, AliasPath, HttpUrl, computed_field, BeforeValidator
 
@@ -56,11 +56,11 @@ class GarminActivity(BaseModel):
     """
 
     @staticmethod
-    def __parse_training_effect_label(training_effect_label: str) -> str:
+    def parse_training_effect_label(training_effect_label: str) -> str:
         return training_effect_label.replace('_', ' ').title()
 
     @staticmethod
-    def __parse_training_effect(training_effect: str) -> str:
+    def parse_training_effect(training_effect: str) -> str:
         message_token = next(iter(training_effect.split('_')), None)
 
         match message_token:
@@ -93,22 +93,19 @@ class GarminActivity(BaseModel):
     calories: float = Field(..., validation_alias='calories')
     is_personal_record: bool = Field(..., validation_alias='pr')
     training_effect: Annotated[
-        str,
-        Field(..., validation_alias='trainingEffectLabel'),
-        BeforeValidator(__parse_training_effect_label),
-    ]
+        Optional[str],
+        BeforeValidator(parse_training_effect_label),
+    ] = Field(None, validation_alias='trainingEffectLabel')
     aerobic_effect: Annotated[
-        str,
-        Field(..., validation_alias='aerobicTrainingEffectMessage'),
-        BeforeValidator(__parse_training_effect),
-    ]
-    aerobic_score: float = Field(..., validation_alias='aerobicTrainingEffect')
+        Optional[str],
+        BeforeValidator(parse_training_effect),
+    ] = Field(None, validation_alias='aerobicTrainingEffectMessage')
+    aerobic_score: Optional[float] = Field(None, validation_alias='aerobicTrainingEffect')
     anaerobic_effect: Annotated[
-        str,
-        Field(..., validation_alias='anaerobicTrainingEffectMessage'),
-        BeforeValidator(__parse_training_effect),
-    ]
-    anaerobic_score: float = Field(..., validation_alias='anaerobicTrainingEffect')
+        Optional[str],
+        BeforeValidator(parse_training_effect),
+    ] = Field(None, validation_alias='anaerobicTrainingEffectMessage')
+    anaerobic_score: Optional[float] = Field(None, validation_alias='anaerobicTrainingEffect')
 
     # __distance_meters: float = Field(..., alias='distance')  # Private to prefer using the `distance` field instead.
     # __duration_seconds: float = Field(..., alias='duration')  # Private to prefer using the `duration` instead.
@@ -119,102 +116,102 @@ class GarminActivity(BaseModel):
     def icon_url(self) -> HttpUrl | None:
         return ACTIVITY_ICONS.get(self.activity_type)
 
-    @computed_field()
-    @cached_property
-    def distance(self) -> Distance:
-        return Distance(self.__distance_meters, DistanceUnit.METER)
-
-    @computed_field()
-    @cached_property
-    def duration(self) -> timedelta:
-        return timedelta(seconds=self.__duration_seconds)
-
-    @computed_field()
-    @cached_property
-    def average_speed(self) -> Speed:
-        return Speed(self.__average_speed_meter_per_second, DistanceUnit.METER, TimeUnit.SECOND)
-
-    @computed_field()
-    @cached_property
-    def average_pace(self) -> Pace:
-        return Pace(1 / self.__average_speed_meter_per_second, TimeUnit.SECOND, DistanceUnit.METER)
-
-
-class GarminActivityFieldSpecification(BaseModel):
-    ...
+    # @computed_field()
+    # @cached_property
+    # def distance(self) -> Distance:
+    #     return Distance(self.__distance_meters, DistanceUnit.METER)
+    #
+    # @computed_field()
+    # @cached_property
+    # def duration(self) -> timedelta:
+    #     return timedelta(seconds=self.__duration_seconds)
+    #
+    # @computed_field()
+    # @cached_property
+    # def average_speed(self) -> Speed:
+    #     return Speed(self.__average_speed_meter_per_second, DistanceUnit.METER, TimeUnit.SECOND)
+    #
+    # @computed_field()
+    # @cached_property
+    # def average_pace(self) -> Pace:
+    #     return Pace(1 / self.__average_speed_meter_per_second, TimeUnit.SECOND, DistanceUnit.METER)
 
 
-class GarminActivityField(Enum):
-    """
-    Describes a Garmin activity data field to sync to the Notion database.
-    """
-
-    @abstractmethod
-    def _get_field_specification(self) -> GarminActivityFieldSpecification:
-        """
-        Retrieve the specification of the field.
-        Used for validating that the database format is valid.
-        """
-        ...
-
-
-class DataField(BaseModel):
-    garmin_activity_field: GarminActivityField
-    notion_column_name: str
-
-
-class GarminDistanceField(BaseModel):
-    garmin_activity_field: str
-    notion_column_name: str
-    unit: DistanceUnit
-
-
-class NotionColumnSpecification(BaseModel):
-    """
-    Describes the requirements for a Notion column.
-    """
-    name: str
-    type: Literal[
-        'checkbox',
-        'created_by',
-        'created_time',
-        'date',
-        'email',
-        'files',
-        'formula',
-        'last_edited_by',
-        'last_edited_time',
-        'multi_select',
-        'number',
-        'people',
-        'phone_number',
-        'relation',
-        'rich_text',
-        'rollup',
-        'select',
-        'status',
-        'title',
-        'url',
-    ]  # See: https://developers.notion.com/reference/property-object
-
-
-class ValidationError(BaseModel):
-    message: str
-
-
-class NotionDatabaseSpecification(BaseModel):
-    """
-    Describes the requirements for a Notion database.
-    """
-    name: str
-    columns: list[NotionColumnSpecification]
-
-    def get_validation_errors(self, notion_database: NotionDatabase) -> list[ValidationError]:
-        """
-        Validates a Notion database against the specification and returns a list of validation errors.
-        If no errors are returned, the Notion database can be considered compatible with the specification.
-        """
-        raise NotImplementedError("Specification validation not implemented.")
+# class GarminActivityFieldSpecification(BaseModel):
+#     ...
+#
+#
+# class GarminActivityField(Enum):
+#     """
+#     Describes a Garmin activity data field to sync to the Notion database.
+#     """
+#
+#     @abstractmethod
+#     def _get_field_specification(self) -> GarminActivityFieldSpecification:
+#         """
+#         Retrieve the specification of the field.
+#         Used for validating that the database format is valid.
+#         """
+#         ...
+#
+#
+# class DataField(BaseModel):
+#     garmin_activity_field: GarminActivityField
+#     notion_column_name: str
+#
+#
+# class GarminDistanceField(BaseModel):
+#     garmin_activity_field: str
+#     notion_column_name: str
+#     unit: DistanceUnit
+#
+#
+# class NotionColumnSpecification(BaseModel):
+#     """
+#     Describes the requirements for a Notion column.
+#     """
+#     name: str
+#     type: Literal[
+#         'checkbox',
+#         'created_by',
+#         'created_time',
+#         'date',
+#         'email',
+#         'files',
+#         'formula',
+#         'last_edited_by',
+#         'last_edited_time',
+#         'multi_select',
+#         'number',
+#         'people',
+#         'phone_number',
+#         'relation',
+#         'rich_text',
+#         'rollup',
+#         'select',
+#         'status',
+#         'title',
+#         'url',
+#     ]  # See: https://developers.notion.com/reference/property-object
+#
+#
+# class ValidationError(BaseModel):
+#     message: str
+#
+#
+# class NotionDatabaseSpecification(BaseModel):
+#     """
+#     Describes the requirements for a Notion database.
+#     """
+#     name: str
+#     columns: list[NotionColumnSpecification]
+#
+#     def get_validation_errors(self, notion_database: NotionDatabase) -> list[ValidationError]:
+#         """
+#         Validates a Notion database against the specification and returns a list of validation errors.
+#         If no errors are returned, the Notion database can be considered compatible with the specification.
+#         """
+#         raise NotImplementedError("Specification validation not implemented.")
 
 
 # endregion columns
@@ -454,13 +451,13 @@ if __name__ == '__main__':
     database_id = os.getenv("NOTION_DB_ID")
 
     # Initialize API clients
-    notion_client = Client(auth=notion_token)
-    garmin_client = Garmin(garmin_email, garmin_password)
-    garmin_client.login()
+    # notion_client = Client(auth=notion_token)
+    # garmin_client = Garmin(garmin_email, garmin_password)
+    # garmin_client.login()
 
     # Validate Notion database
-    notion_database = notion_client.databases.retrieve(database_id)
-    parsed_database = NotionDatabase.model_validate(notion_database)
+    # notion_database = notion_client.databases.retrieve(database_id)
+    # parsed_database = NotionDatabase.model_validate(notion_database)
     # TODO:
     #  id_fields = []
     #  data_fields = []
@@ -468,9 +465,9 @@ if __name__ == '__main__':
     # get Garmin activities
     # garmin_activities = garmin_client.get_activities(0, 10)
     raw_garmin_activities = get_fake_activities()
-    garmin_activities = (
+    garmin_activities = [
         GarminActivity.model_validate(activity)
         for activity in raw_garmin_activities
-    )
+    ]
 
     assert 1
