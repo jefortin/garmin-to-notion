@@ -120,30 +120,30 @@ def create_activity(client, database_id, activity):
     """
     Create a new activity in the Notion database.
     """
-    activity_date = activity.get('startTimeGMT')
-    activity_name = format_entertainment(activity.get('activityName', 'Unnamed Activity'))
-    activity_type = format_activity_type(
-        activity.get('activityType', {}).get('typeKey', 'Unknown'),
-        activity_name
-    )
+    # activity_date = activity.get('startTimeGMT')
+    # activity_name = format_entertainment(activity.get('activityName', 'Unnamed Activity'))
+    # activity_type = format_activity_type(
+    #     activity.get('activityType', {}).get('typeKey', 'Unknown'),
+    #     activity_name
+    # )
     
     # Get icon for the activity type
-    icon_url = ACTIVITY_ICONS.get(activity_type)
+    # icon_url = ACTIVITY_ICONS.get(activity_type)
     
     properties = {
-        "Date": {"date": {"start": activity_date}},
-        "Activity Type": {"select": {"name": activity_type}},
-        "Activity Name": {"title": [{"text": {"content": activity_name}}]},
-        "Distance (km)": {"number": round(activity.get('distance', 0) / 1000, 2)},
-        "Duration (min)": {"number": round(activity.get('duration', 0) / 60, 2)},
-        "Calories": {"number": activity.get('calories', 0)},
-        "Avg Pace": {"rich_text": [{"text": {"content": format_pace(activity.get('averageSpeed', 0))}}]},
+        # "Date": {"date": {"start": activity_date}},
+        # "Activity Type": {"select": {"name": activity_type}},
+        # "Activity Name": {"title": [{"text": {"content": activity_name}}]},
+        # "Distance (km)": {"number": round(activity.get('distance', 0) / 1000, 2)},
+        # "Duration (min)": {"number": round(activity.get('duration', 0) / 60, 2)},
+        # "Calories": {"number": activity.get('calories', 0)},
+        # "Avg Pace": {"rich_text": [{"text": {"content": format_pace(activity.get('averageSpeed', 0))}}]},
         "Training Effect": {"select": {"name": format_training_effect(activity.get('trainingEffectLabel', 'Unknown'))}},
         "Aerobic": {"number": round(activity.get('aerobicTrainingEffect', 0), 1)},
         "Aerobic Effect": {"select": {"name": format_training_message(activity.get('aerobicTrainingEffectMessage', 'Unknown'))}},
         "Anaerobic": {"number": round(activity.get('anaerobicTrainingEffect', 0), 1)},
         "Anaerobic Effect": {"select": {"name": format_training_message(activity.get('anaerobicTrainingEffectMessage', 'Unknown'))}},
-        "PR": {"checkbox": activity.get('pr', False)}
+        # "PR": {"checkbox": activity.get('pr', False)}
     }
     
     page = {
