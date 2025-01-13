@@ -1,11 +1,12 @@
 from __future__ import annotations
-from abc import ABC, abstractproperty, abstractmethod
-from datetime import datetime, timedelta
+
+from abc import abstractmethod
+from datetime import timedelta
 from enum import Enum
 from functools import cached_property
-from typing import Literal, Annotated, Union
+from typing import Literal, Annotated
 
-from pydantic import BaseModel, Field, UUID4, NaiveDatetime, AliasPath, HttpUrl, computed_field
+from pydantic import BaseModel, Field, UUID4, NaiveDatetime, AliasPath, HttpUrl, computed_field, BeforeValidator
 
 from _distance import DistanceUnit, Distance
 from _pace import Pace
@@ -54,18 +55,64 @@ class GarminActivity(BaseModel):
     TODO: This model is not complete, but only implements the currently used fields. Complete the model as needed.
     """
 
-    start_time_utc: NaiveDatetime = Field(...,
-                                          validation_alias='startTimeGMT')  # GMT and UTC are considered equivalent.
+    @staticmethod
+    def __parse_training_effect_label(training_effect_label: str) -> str:
+        return training_effect_label.replace('_', ' ').title()
+
+    @staticmethod
+    def __parse_training_effect(training_effect: str) -> str:
+        message_token = next(iter(training_effect.split('_')), None)
+
+        match message_token:
+            case 'NO':
+                return 'No Benefit'
+            case 'MINOR':
+                return 'Some Benefit'
+            case 'RECOVERY':
+                return 'Recovery'
+            case 'MAINTAINING':
+                return 'Maintaining'
+            case 'IMPROVING':
+                return 'Impacting'
+            case 'IMPACTING':
+                return 'Impacting'
+            case 'HIGHLY':
+                return 'Highly Impacting'
+            case 'OVERREACHING':
+                return 'Overreaching'
+            case _:
+                raise ValueError(f"Training effect '{training_effect}' is not a valid option")
+
+    start_time_utc: NaiveDatetime = Field(
+        ...,
+        validation_alias='startTimeGMT',  # GMT and UTC are considered equivalent.
+    )
     id: int = Field(..., validation_alias='activityId')
     name: str = Field(..., validation_alias='activityName')
     type: str = Field(..., validation_alias=AliasPath('activityType', 'typeKey'))
-
-    __distance_meters: float = Field(..., alias='distance')  # Private to prefer using the `distance` field instead.
-    __duration_seconds: float = Field(..., alias='duration')  # Private to prefer using the `duration` instead.
-    __average_speed_meter_per_second: float = Field(..., alias='averageSpeed')
-
     calories: float = Field(..., validation_alias='calories')
     is_personal_record: bool = Field(..., validation_alias='pr')
+    training_effect: Annotated[
+        str,
+        Field(..., validation_alias='trainingEffectLabel'),
+        BeforeValidator(__parse_training_effect_label),
+    ]
+    aerobic_effect: Annotated[
+        str,
+        Field(..., validation_alias='aerobicTrainingEffectMessage'),
+        BeforeValidator(__parse_training_effect),
+    ]
+    aerobic_score: float = Field(..., validation_alias='aerobicTrainingEffect')
+    anaerobic_effect: Annotated[
+        str,
+        Field(..., validation_alias='anaerobicTrainingEffectMessage'),
+        BeforeValidator(__parse_training_effect),
+    ]
+    anaerobic_score: float = Field(..., validation_alias='anaerobicTrainingEffect')
+
+    # __distance_meters: float = Field(..., alias='distance')  # Private to prefer using the `distance` field instead.
+    # __duration_seconds: float = Field(..., alias='duration')  # Private to prefer using the `duration` instead.
+    # __average_speed_meter_per_second: float = Field(..., alias='averageSpeed')
 
     @computed_field
     @cached_property
