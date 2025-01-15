@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, AfterValidator, ValidationError
 from pydantic.experimental.pipeline import validate_as
@@ -6,7 +6,7 @@ from pydantic.experimental.pipeline import validate_as
 from _distance import DistanceUnit
 from _fake_db import get_fake_db
 from _garmin import GarminActivity
-from _notion import NotionDatabase
+from _notion import NotionDatabase, NotionColumnType
 from _time import TimeUnit
 
 
@@ -71,6 +71,7 @@ class NotionColumnSchema(BaseModel):
     Describes the expected schema of a Notion column.
     """
     name: str
+    valid_types: list[NotionColumnType]
 
 
 class NotionDatabaseSchema(BaseModel):
@@ -90,10 +91,27 @@ class DatabaseSchemaFactory:
         return NotionDatabaseSchema(
             name=database_title,
             columns=[
-                NotionColumnSchema(name=data_field.notion_column_name)
+                self.__get_schema_for_data_field(data_field)
                 for data_field in data_fields
             ]
         )
+
+    def __get_schema_for_data_field(self, data_field: DataField) -> NotionColumnSchema:
+        raise NotImplementedError()
+        return NotionColumnSchema(name=data_field.notion_column_name, valid_types=['TODO'])
+
+    def __get_accepted_data_field_notion_types(self, data_field: DataField) -> list[NotionColumnType]:
+        match data_field:
+            case DistanceField():
+                return [NotionColumnType.RICH_TEXT, ]
+            case DurationField():
+                return [NotionColumnType.NUMBER]
+            case SpeedField():
+                return [NotionColumnType.NUMBER]
+            case PaceField():
+                return [NotionColumnType.NUMBER]
+            case _:
+                return [NotionColumnType.RICH_TEXT]
 
 
 class NotionDatabaseValidator:
@@ -125,7 +143,7 @@ class NotionDatabaseValidator:
         Checks if the name of the database matches the expected name.
         Returns a validation error if the names do not match.
         """
-        if database.name != database_schema.name:
+        if database_schema.name not in database.names:
             return DatabaseValidationError(
                 message=f"Database name '{database.name}' does not match the expected name '{database_schema.name}'."
             )

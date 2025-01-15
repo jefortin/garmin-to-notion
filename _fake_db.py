@@ -40,7 +40,8 @@ def get_fake_db() -> dict:
                 },
                 'id': 'IrNS',
                 'name': 'AE:AN',
-                'type': 'formula'},
+                'type': 'formula'
+            },
             'Activity Name': {
                 'id': 'title',
                 'name': 'Activity Name',
