@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from pytz import timezone
 
 
 class DistanceUnit(Enum):
@@ -34,6 +35,10 @@ class Distance:
 
     def __str__(self) -> str:
         return f"{self.__value} {self.__unit.value}"
+
+    @property
+    def value(self) -> float:
+        return self.__value
 
     def convert_to(self, new_distance_unit: DistanceUnit) -> Distance:
         """
