@@ -1,9 +1,9 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from collections.abc import Callable
 from datetime import timedelta, datetime, timezone
 from typing import Annotated, Generic, TypeVar, Any
 
-from pydantic import BaseModel, Field, AfterValidator, ValidationError
+from pydantic import BaseModel, Field, AfterValidator
 from pydantic.experimental.pipeline import validate_as
 from pydantic_extra_types.timezone_name import TimeZoneName
 from pytz import timezone as pytz_timezone
@@ -11,7 +11,7 @@ from pytz import timezone as pytz_timezone
 from _distance import DistanceUnit, Distance
 from _fake_db import get_fake_db
 from _garmin import GarminActivity
-from _notion import NotionDatabase, NotionColumnType
+from _notion import NotionDatabase, NotionColumnType, NotionDatabaseColumn
 from _pace import Pace
 from _speed import Speed
 from _time import TimeUnit
@@ -68,10 +68,12 @@ TimeZone = Annotated[
 
 # endregion custom types
 
+# region data fields
+
 T = TypeVar('T')
 
 
-class DataField(BaseModel, Generic[T]):
+class DataField(BaseModel, ABC, Generic[T]):
     garmin_activity_field: Annotated[
         str,
         AfterValidator(check_is_valid_garmin_activity_field)
@@ -140,8 +142,6 @@ class DistanceField(DataField[Distance]):
 
 
 class DurationField(DataField[timedelta]):
-    unit: TimeUnit
-
     def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[timedelta], Any]]:
         return {
             NotionColumnType.TITLE: lambda duration: str(duration),
@@ -173,6 +173,10 @@ class PaceField(DataField[Pace]):
             NotionColumnType.NUMBER: lambda pace: round(pace.value, 2),
         }
 
+
+# endregion data fields
+
+# region schemas
 
 class NotionColumnSchema(BaseModel):
     """
@@ -212,6 +216,8 @@ class DatabaseSchemaFactory:
         )
 
 
+# endregion schemas
+
 class NotionDatabaseValidator:
     def validate_database(
         self,
@@ -227,7 +233,7 @@ class NotionDatabaseValidator:
         if validation_errors := self.__check_if_database_name_valid(database, database_schema):
             return [validation_errors]
 
-        if validation_errors := self.__check_column_names_valid(database, database_schema):
+        if validation_errors := self.__check_column_schemas_are_valid(database.properties, database_schema.columns):
             return validation_errors
 
         return []
@@ -247,21 +253,40 @@ class NotionDatabaseValidator:
             )
 
     @staticmethod
-    def __check_column_names_valid(
-        database: NotionDatabase,
-        database_schema: NotionDatabaseSchema,
+    def __check_column_schemas_are_valid(
+        database_columns: list[NotionDatabaseColumn],
+        column_schemas: list[NotionColumnSchema],
     ) -> list[DatabaseValidationError] | None:
         """
-        Checks if a column with the specified name exists in the database for every requested data field.
-        Returns a validation error for every missing column.
+        Validates that the columns in the database match the expected schema.
+        Returns a validation error for every missing column or invalid column.
         """
         validation_errors = []
 
-        for expected_column_schema in database_schema.columns:
-            if expected_column_schema.name not in (property.name for property in database.properties):
+        for column_schema in column_schemas:
+            matching_column = next(
+                (
+                    column
+                    for column in database_columns
+                    if column.name == column_schema.name
+                ),
+                None,
+            )
+
+            if matching_column is None:
+                validation_errors.append(
+                    DatabaseValidationError(message=f"Column '{column_schema.name}' does not exist in the database.")
+                )
+                continue  # Further validation is not required since the column does not exist.
+
+            if matching_column.type not in column_schema.valid_types:
+                valid_type_list = ', '.join((valid_type.value for valid_type in column_schema.valid_types))
                 validation_errors.append(
                     DatabaseValidationError(
-                        message=f"Column '{expected_column_schema.name}' does not exist in the database."
+                        message=(
+                            f"Column '{column_schema.name}' is of type '{matching_column.type}', "
+                            f"but should be one of: {valid_type_list}."
+                        )
                     )
                 )
 
