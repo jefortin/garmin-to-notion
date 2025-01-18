@@ -71,6 +71,7 @@ TimeZone = Annotated[
 # region data fields
 
 T = TypeVar('T')
+TNumber = TypeVar('TNumber', int, float)
 
 
 class DataField(BaseModel, ABC, Generic[T]):
@@ -85,18 +86,18 @@ class DataField(BaseModel, ABC, Generic[T]):
         """
         Returns a dictionary of Notion column types to functions that transform the data field value into a valid value
         for that column type.
-        Fields that have additional parameters that affect the format (e.g. units for Distance) will be converted to the
-        correct format before being passed to the adapter, to allow using them in as many column types as possible.
         """
         ...
 
 
-class NumberField(DataField[float]):
-    def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[float], Any]]:
+class NumberField(DataField[TNumber]):
+    precision: int = Field(..., alias='precision')
+
+    def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[TNumber], Any]]:
         return {
-            NotionColumnType.TITLE: lambda value: str(round(value, 2)) if isinstance(value, float) else value,
-            NotionColumnType.NUMBER: lambda value: round(value, 2) if isinstance(value, float) else value,
-            NotionColumnType.RICH_TEXT: lambda value: str(round(value, 2)) if isinstance(value, float) else value,
+            NotionColumnType.TITLE: lambda value: f"{float(value):.{self.precision}f}",
+            NotionColumnType.NUMBER: lambda value: round(float(value), self.precision),
+            NotionColumnType.RICH_TEXT: lambda value: f"{float(value):.{self.precision}f}",
         }
 
 
@@ -131,13 +132,13 @@ class DateField(DataField[datetime]):
 
 
 class DistanceField(DataField[Distance]):
-    unit: DistanceUnit
+    unit: DistanceUnit = Field(..., validation_alias='unit')
 
     def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[Distance], Any]]:
         return {
-            NotionColumnType.TITLE: lambda distance: str(distance),
-            NotionColumnType.RICH_TEXT: lambda distance: str(distance),
-            NotionColumnType.NUMBER: lambda distance: round(distance.value, 2),
+            NotionColumnType.TITLE: lambda distance: str(distance.convert_to(self.unit)),
+            NotionColumnType.RICH_TEXT: lambda distance: str(distance.convert_to(self.unit)),
+            NotionColumnType.NUMBER: lambda distance: round(distance.convert_to(self.unit).value, 2),
         }
 
 
@@ -168,9 +169,9 @@ class PaceField(DataField[Pace]):
 
     def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[Pace], Any]]:
         return {
-            NotionColumnType.TITLE: lambda pace: str(pace),
-            NotionColumnType.RICH_TEXT: lambda pace: str(pace),
-            NotionColumnType.NUMBER: lambda pace: round(pace.value, 2),
+            NotionColumnType.TITLE: lambda pace: str(pace.convert_to(self.time_unit, self.distance_unit)),
+            NotionColumnType.RICH_TEXT: lambda pace: str(pace.convert_to(self.time_unit, self.distance_unit)),
+            NotionColumnType.NUMBER: lambda pace: round(pace.convert_to(self.time_unit, self.distance_unit).value, 2),
         }
 
 
@@ -312,6 +313,7 @@ if __name__ == '__main__':
         NumberField.model_validate({
             'garmin_activity_field': 'calories',
             'notion_column_name': 'Calories',
+            'precision': 0,
         }),
         PaceField.model_validate({
             'garmin_activity_field': 'average_pace',
@@ -325,6 +327,7 @@ if __name__ == '__main__':
         NumberField.model_validate({
             'garmin_activity_field': 'aerobic_score',
             'notion_column_name': 'Aerobic',
+            'precision': 2,
         }),
         TextField.model_validate({
             'garmin_activity_field': 'aerobic_effect',
@@ -333,6 +336,7 @@ if __name__ == '__main__':
         NumberField.model_validate({
             'garmin_activity_field': 'anaerobic_score',
             'notion_column_name': 'Anaerobic',
+            'precision': 2,
         }),
         TextField.model_validate({
             'garmin_activity_field': 'anaerobic_effect',
