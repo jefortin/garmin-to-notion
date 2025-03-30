@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 from enum import Enum
-from pytz import timezone
 
 
 class DistanceUnit(Enum):
     KILOMETER = 'km'
     METER = 'm'
+    MILE = 'mi'
 
     __unit_in_meters: dict[str, float] = {
-        KILOMETER: 1000,
+        # How many meters are in each unit.
         METER: 1,
+        KILOMETER: 1000,
+        MILE: 1609.34,
     }
 
     def get_conversion_ratio(self, new_distance_unit: DistanceUnit) -> float:
@@ -34,7 +36,7 @@ class Distance:
         self.__unit = unit
 
     def __str__(self) -> str:
-        return f"{self.__value} {self.__unit.value}"
+        return f"{self.__value:,} {self.__unit.value}"
 
     @property
     def value(self) -> float:

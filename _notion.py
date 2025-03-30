@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from enum import Enum
 from typing import Annotated
 
-from pydantic import BaseModel, UUID4, Field
+from pydantic import BaseModel, UUID4, Field, AfterValidator
 from pydantic.experimental.pipeline import validate_as
 
 
@@ -37,6 +38,7 @@ DatabaseColumnsField = Annotated[
     list['NotionDatabaseColumn'],
     validate_as(dict[str, 'NotionDatabaseColumn']).transform(parse_database_properties),
 ]
+UuidString = Annotated[str, AfterValidator(lambda uuid_string: uuid.UUID(uuid_string, version=4))]
 
 
 # endregion custom types
@@ -47,6 +49,7 @@ class NotionColumnType(Enum):
     Represents the different types of columns that can be in a Notion database
     See: https://developers.notion.com/reference/property-object
     """
+    UNIQUE_ID = 'unique_id'
     CHECKBOX = 'checkbox'
     CREATED_BY = 'created_by'
     CREATED_TIME = 'created_time'
@@ -76,7 +79,7 @@ class NotionDatabaseColumn(BaseModel):
 
 
 class NotionDatabase(BaseModel):
-    id: UUID4 = Field(..., validation_alias='id')
+    id: UUID4 | UuidString = Field(..., validation_alias='id')
     names: DatabaseTitleField = Field(..., validation_alias='title')
     properties: Annotated[
         list[NotionDatabaseColumn],

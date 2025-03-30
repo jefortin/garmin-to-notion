@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from functools import cached_property
 from typing import Annotated, Optional
 
@@ -41,6 +41,13 @@ TRAINING_EFFECT_LABELS = {
     'HIGHLY': 'Highly Impacting',
     'OVERREACHING': 'Overreaching',
 }
+
+
+def parse_naive_gmt_datetime(naive_gmt_datetime: datetime) -> datetime:
+    if (naive_gmt_datetime.tzinfo is None) or (naive_gmt_datetime.tzinfo.utcoffset(naive_gmt_datetime) is None):
+        return naive_gmt_datetime.replace(tzinfo=timezone.utc)
+
+    return naive_gmt_datetime
 
 
 def parse_icon_url(activity_type: str) -> HttpUrl | None:
@@ -87,6 +94,7 @@ def parse_pace_from_speed(speed_meter_per_second: float) -> Pace:
 
 # region custom fields
 
+GmtDateTimeField = Annotated[datetime, validate_as(NaiveDatetime).transform(parse_naive_gmt_datetime)]
 TrainingEffectField = Annotated[Optional[str], BeforeValidator(parse_training_effect_label)]
 MetabolismEffectField = Annotated[Optional[str], BeforeValidator(parse_metabolism_effect)]
 DistanceField = Annotated[Distance, validate_as(float).transform(parse_distance_field)]
@@ -100,10 +108,10 @@ PaceField = Annotated[Pace, validate_as(float).transform(parse_pace_from_speed)]
 class GarminActivity(BaseModel):
     """
     Describes the data of a Garmin activity entry.
-    TODO: This model is not complete, but only implements the currently used fields. Complete the model as needed.
+    TODO: This model is not exhaustive, but only implements the currently used fields. Adjust the model as needed.
     """
 
-    start_time_utc: NaiveDatetime = Field(..., validation_alias='startTimeGMT')  # GMT and UTC are equivalent.
+    start_time: GmtDateTimeField = Field(..., validation_alias='startTimeGMT')  # GMT and UTC are equivalent.
     id: int = Field(..., validation_alias='activityId')
     name: str = Field(..., validation_alias='activityName')
     type: str = Field(..., validation_alias=AliasPath('activityType', 'typeKey'))

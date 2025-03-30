@@ -74,7 +74,7 @@ T = TypeVar('T')
 TNumber = TypeVar('TNumber', int, float)
 
 
-class DataField(BaseModel, ABC, Generic[T]):
+class DataField(ABC, BaseModel, Generic[T]):
     garmin_activity_field: Annotated[
         str,
         AfterValidator(check_is_valid_garmin_activity_field)
@@ -136,9 +136,9 @@ class DistanceField(DataField[Distance]):
 
     def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[Distance], Any]]:
         return {
-            NotionColumnType.TITLE: lambda distance: str(distance.convert_to(self.unit)),
-            NotionColumnType.RICH_TEXT: lambda distance: str(distance.convert_to(self.unit)),
-            NotionColumnType.NUMBER: lambda distance: round(distance.convert_to(self.unit).value, 2),
+            NotionColumnType.TITLE: lambda distance: str(distance.convert_to()),
+            NotionColumnType.RICH_TEXT: lambda distance: str(distance.convert_to()),
+            NotionColumnType.NUMBER: lambda distance: round(distance.convert_to().value, 2),
         }
 
 
@@ -169,9 +169,9 @@ class PaceField(DataField[Pace]):
 
     def get_column_type_adapters(self) -> dict[NotionColumnType, Callable[[Pace], Any]]:
         return {
-            NotionColumnType.TITLE: lambda pace: str(pace.convert_to(self.time_unit, self.distance_unit)),
-            NotionColumnType.RICH_TEXT: lambda pace: str(pace.convert_to(self.time_unit, self.distance_unit)),
-            NotionColumnType.NUMBER: lambda pace: round(pace.convert_to(self.time_unit, self.distance_unit).value, 2),
+            NotionColumnType.TITLE: lambda pace: str(pace.convert_to(self.distance_unit)),
+            NotionColumnType.RICH_TEXT: lambda pace: str(pace.convert_to(self.distance_unit)),
+            NotionColumnType.NUMBER: lambda pace: round(pace.convert_to(self.distance_unit).value, 2),
         }
 
 
@@ -213,7 +213,7 @@ class DatabaseSchemaFactory:
     def __get_schema_for_data_field(data_field: DataField) -> NotionColumnSchema:
         return NotionColumnSchema(
             name=data_field.notion_column_name,
-            valid_types=data_field.get_column_type_adapters().keys()
+            valid_types=list(data_field.get_column_type_adapters().keys())
         )
 
 

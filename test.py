@@ -18,13 +18,13 @@ if __name__ == '__main__':
     database_id = os.getenv("NOTION_DB_ID")
 
     # Initialize API clients
-    # notion_client = NotionClient(auth=notion_token)
+    notion_client = NotionClient(auth=notion_token)
     # garmin_client = Garmin(garmin_email, garmin_password)
     # garmin_client.login()
 
     # Validate Notion database
-    notion_database = get_fake_db()
-    # notion_database = notion_client.databases.retrieve(database_id)
+    # notion_database = get_fake_db()
+    notion_database = notion_client.databases.retrieve(database_id)
     parsed_database = NotionDatabase.model_validate(notion_database)
     # TODO:
     #  id_fields = []

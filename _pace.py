@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from _distance import DistanceUnit
-from _time import TimeUnit
+from _time import TimeUnit, Duration, DurationFormat
 
 
 class Pace:
@@ -10,21 +10,19 @@ class Pace:
     """
 
     def __init__(self, value: float, time_unit: TimeUnit, distance_unit: DistanceUnit):
-        self.__value = value
-        self.__time_unit = time_unit
+        self.__duration = Duration(seconds=value * time_unit.get_conversion_ratio(TimeUnit.SECOND))
         self.__distance_unit = distance_unit
 
     def __str__(self) -> str:
-        return f"{self.__value} {self.__time_unit.value} / {self.__distance_unit.value}"
+        return f"{self.__duration.format(DurationFormat.Dynamic)} / {self.__distance_unit.value}"
 
-    def convert_to(self, new_time_unit: TimeUnit, new_distance_unit: DistanceUnit, ) -> Pace:
+    def convert_to(self, new_distance_unit: DistanceUnit) -> Pace:
         """
         Converts the pace to a new unit and returns the new value.
         """
-        time_ratio = self.__time_unit.get_conversion_ratio(new_time_unit)
         distance_ratio = self.__distance_unit.get_conversion_ratio(new_distance_unit)
         return Pace(
-            self.__value * time_ratio / distance_ratio,
-            new_time_unit,
+            self.__duration.total_seconds() / distance_ratio,
+            TimeUnit.SECOND,
             new_distance_unit,
         )
