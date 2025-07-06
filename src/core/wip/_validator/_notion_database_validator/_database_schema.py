@@ -1,6 +1,6 @@
 from src.core.notion import NotionColumnType
-from ._models import BridgeModel
-from ._synchronization_plan import SynchronizedField
+from ..._models import BridgeModel
+from ..._synchronization_plan import SynchronizedField
 
 
 class NotionColumnSchema(BridgeModel):

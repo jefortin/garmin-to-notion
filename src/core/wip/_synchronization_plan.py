@@ -10,7 +10,6 @@ from pydantic.experimental.pipeline import validate_as
 from pydantic_extra_types.timezone_name import TimeZoneName
 from pytz import timezone as pytz_timezone
 
-from src.core.garmin import GarminModel
 from src.core.notion import NotionColumnType
 from src.core.types import (
     DistanceUnit,
@@ -21,7 +20,6 @@ from src.core.types import (
     Duration,
 )
 from ._models import BridgeModel
-from .garmin_notion_bridge import NotionDatabaseSchema
 
 # region custom types
 
@@ -72,7 +70,7 @@ class SynchronizationPlan(BridgeModel):
     High-level representation of the synchronization plan between a Garmin model and a Notion database.
     """
 
-    notion_database_schema: NotionDatabaseSchema
+    notion_database_name: str
     synchronized_fields: list[SynchronizedField]
 
 
@@ -84,18 +82,6 @@ class SynchronizedField(BridgeModel):
     garmin_field_name: str
     notion_column_name: str
     field_type: SynchronizedFieldType
-
-    @model_validator(mode='after')
-    def check_garmin_field_is_valid(self) -> Self:
-        raise RuntimeError("Move this to garmin model validator.")
-        garmin_model_fields = self.garmin_model.model_fields
-
-        assert self.garmin_field_name in garmin_model_fields, (
-            f"Field '{self.garmin_field_name}' is not a valid Garmin activity field. "
-            f"Available fields are: {', '.join(garmin_model_fields.keys())}."
-        )
-
-        return self
 
 
 class SynchronizedFieldType(ABC, BridgeModel, Generic[T]):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from _distance import DistanceUnit
-from _time import TimeUnit, Duration, DurationFormat
+from ._distance import DistanceUnit
+from ._time import TimeUnit, Duration, DurationFormat
 
 
 class Pace:

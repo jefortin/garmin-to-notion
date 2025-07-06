@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
 from src.core.notion import NotionDatabase
-from ._v1 import NotionDatabaseValidatorV1
-from .._synchronization_plan_validator import SynchronizationPlanValidationError
+from .._interface import SynchronizationPlanValidationError
 from ..._synchronization_plan import SynchronizationPlan
 
 
@@ -31,12 +30,3 @@ class INotionDatabaseValidator(ABC):
         """
         ...
 
-
-class NotionDatabaseValidatorFactory:
-    """
-    Factory for creating the INotionDatabaseValidator instance to use for validating Notion databases.
-    """
-
-    @staticmethod
-    def create() -> INotionDatabaseValidator:
-        return NotionDatabaseValidatorV1()

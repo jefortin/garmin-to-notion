@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from notion_client import Client as NotionClient
+
 from src.core.garmin import GarminModel
-from src.core.notion import NotionDatabase
+from src.core.notion import NotionDatabase, NotionDatabaseManager
 from src.core.synchronizer._activities._models import GarminActivity
 from src.core.types import DistanceUnit, TimeUnit
-from ._database_schema import DatabaseSchemaFactory
 from ._garmin_to_notion_converter import GarminToNotionConverterFactory
 from ._synchronization_plan import (
     NumberField,
@@ -15,7 +16,8 @@ from ._synchronization_plan import (
     TrueFalseField,
     SpeedField,
     DurationField,
-    SynchronizationPlan, SynchronizedField,
+    SynchronizationPlan,
+    SynchronizedField,
 )
 from ._validator import (
     SynchronizationPlanValidatorFactory,
@@ -69,8 +71,8 @@ activity_data_fields: list[SynchronizedField] = [
         garmin_field_name='average_pace',
         notion_column_name='Avg Pace',
         field_type=PaceField(
-            time_unit=TimeUnit.SECOND,
-            distance_unit=DistanceUnit.KILOMETER,
+            unit='s/km',
+            # TODO: Fix Python input
         )
     ),
     SynchronizedField(
@@ -121,44 +123,48 @@ activity_data_fields: list[SynchronizedField] = [
             default='Unknown',
         )
     ),
-    SynchronizedField(
-        garmin_field_name='average_speed',
-        notion_column_name='Speed',
-        field_type=SpeedField(
-            distance_unit=DistanceUnit.KILOMETER,
-            time_unit=TimeUnit.HOUR,
-        )
-    ),
-    SynchronizedField(
-        garmin_field_name='bad field',
-        notion_column_name='Activity Type',
-        field_type=TextField(
-            default='Unknown',
-        )
-    ),
+    # SynchronizedField(
+    #     garmin_field_name='average_speed',
+    #     notion_column_name='Speed',
+    #     field_type=SpeedField(
+    #         unit='km/h',
+    #         # TODO: Fix Python input
+    #     )
+    # ),
+    # SynchronizedField(
+    #     garmin_field_name='bad field',
+    #     notion_column_name='Activity Type',
+    #     field_type=TextField(
+    #         default='Unknown',
+    #     )
+    # ),
 ]
 
 
 # endregion data fields
 
-def get_notion_database(notion_token: str, database_id: str, *, use_fake_database: bool) -> NotionDatabase:
+def get_notion_database(
+    notion_token: str,
+    database_id: str,
+    *,
+    use_fake_database: bool,
+) -> tuple[NotionDatabase, NotionClient]:
     if use_fake_database:
-        from .._fakes._fake_db import get_fake_db
+        from ._fakes._fake_db import get_fake_db
         raw_notion_database = NotionDatabase.model_validate(get_fake_db())
+        notion_client = None
     else:
-        from notion_client import Client as NotionClient
-
         notion_client = NotionClient(auth=notion_token)
 
         raw_notion_database = notion_client.databases.retrieve(database_id)
 
-    return NotionDatabase.model_validate(raw_notion_database)
+    return NotionDatabase.model_validate(raw_notion_database), notion_client
 
 
 def get_garmin_activities(garmin_username: str, garmin_password: str, *, use_fake_activities: bool) -> list[
     GarminActivity]:
     if use_fake_activities:
-        from .._fakes._fake_activities import get_fake_activities
+        from ._fakes._fake_activities import get_fake_activities
         raw_activities = get_fake_activities()
     else:
         from garminconnect import Garmin as GarminClient
@@ -179,15 +185,15 @@ if __name__ == '__main__':
     notion_token = os.getenv("NOTION_TOKEN")
     database_id = os.getenv("NOTION_DB_ID")
 
-    database_schema = DatabaseSchemaFactory().create('Activity Database', activity_data_fields)
+    # database_schema = DatabaseSchemaFactory().create('Activity Database', activity_data_fields)
 
     synchronization_plan = SynchronizationPlan(
-        notion_database_schema=database_schema,
+        notion_database_name='Activity Database',
         synchronized_fields=activity_data_fields,
     )
 
     garmin_model: type[GarminModel] = GarminActivity
-    notion_database: NotionDatabase = get_notion_database(notion_token, database_id, use_fake_database=False)
+    notion_database, notion_client = get_notion_database(notion_token, database_id, use_fake_database=False)
 
     validator = SynchronizationPlanValidatorFactory().create()
     validation_errors = validator.validate_synchronization_plan(
@@ -209,9 +215,13 @@ if __name__ == '__main__':
 
     # insert_block = converter.get_insert_payload(garmin_activity)
 
-    raise NotImplementedError('Subclass NotionDatabaseManager')
-    notion_database = NotionDatabaseManager(notion_client, database_id, "ID", converter.get_insert_payload)
+    notion_database = NotionDatabaseManager(
+        notion_client,
+        database_id,
+        "ID",
+        converter.get_insert_payload,
+    )
 
-    if not notion_database.read(garmin_activity.id):
+    if not notion_database.read(str(garmin_activity.id)):
         notion_database.create(garmin_activity, garmin_activity.icon_url)
     assert 1

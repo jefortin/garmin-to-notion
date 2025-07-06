@@ -1,8 +1,8 @@
-from ._synchronization_plan_validator import (
+from ._interface import (
     SynchronizationPlanValidationError,
     ISynchronizationPlanValidator,
-    SynchronizationPlanValidatorFactory,
 )
+from ._factory import SynchronizationPlanValidatorFactory
 
 __all__ = [
     'SynchronizationPlanValidationError',

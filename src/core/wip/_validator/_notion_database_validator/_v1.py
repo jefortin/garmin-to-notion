@@ -1,6 +1,6 @@
 from src.core.notion import NotionDatabase, NotionDatabaseColumn
+from ._database_schema import DatabaseSchemaFactory, NotionDatabaseSchema, NotionColumnSchema
 from ._interface import DatabaseValidationError, INotionDatabaseValidator
-from ..._database_schema import NotionDatabaseSchema, NotionColumnSchema
 from ..._synchronization_plan import SynchronizationPlan
 
 
@@ -13,6 +13,9 @@ class NotionDatabaseValidatorV1(INotionDatabaseValidator):
         - The types of the Notion database columns are compatible with those of the configured synchronized fields.
     """
 
+    def __init__(self, database_schema_factory: DatabaseSchemaFactory):
+        self.__database_schema_factory = database_schema_factory
+
     def validate_database(
         self,
         database: NotionDatabase,
@@ -24,7 +27,10 @@ class NotionDatabaseValidatorV1(INotionDatabaseValidator):
         If no errors are returned, the Notion database can be considered compatible with the specification.
         """
 
-        database_schema = synchronization_plan.notion_database_schema
+        database_schema = self.__database_schema_factory.create(
+            synchronization_plan.notion_database_name,
+            synchronization_plan.synchronized_fields,
+        )
 
         if validation_errors := self.__check_if_database_name_valid(database, database_schema):
             # Early exit here. Since the name is not correct, we can't assume that this is the intended database.

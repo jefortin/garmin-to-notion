@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from src.core.garmin import GarminModel
-from .._synchronization_plan_validator import SynchronizationPlanValidationError
+from .._interface import SynchronizationPlanValidationError
 from ..._synchronization_plan import SynchronizationPlan
 
 
@@ -36,7 +36,6 @@ class GarminModelValidatorFactory:
     Factory for creating the IGarminModelValidator instance to use for validating Garmin models.
     """
 
-    @staticmethod
-    def create() -> IGarminModelValidator:
+    def create(self) -> IGarminModelValidator:
         from ._v1 import GarminModelValidatorV1
         return GarminModelValidatorV1()
