@@ -2,10 +2,17 @@ from __future__ import annotations
 
 import uuid
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Callable, Any
 
 from pydantic import BaseModel, UUID4, Field, AfterValidator
 from pydantic.experimental.pipeline import validate_as
+
+
+class NotionModel(BaseModel):
+    """
+    Base class for all pydantic models representing Notion entities.
+    """
+    ...
 
 
 # region utilities
@@ -71,14 +78,54 @@ class NotionColumnType(Enum):
     TITLE = 'title'
     URL = 'url'
 
+    __data_templates: dict[NotionColumnType, Callable[[Any], dict]] = {
+        # Mapping of the expected data format for each column type.
+        # See: https://developers.notion.com/reference/page-property-values#type-objects
+        # TODO: Not all types are supported yet to simplify the logic.
+        UNIQUE_ID: lambda value: {'unique_id': value},
+        CHECKBOX: lambda value: {'checkbox': value},
+        # CREATED_BY: lambda value: {'created_by': value}, # Not supported for inserts.
+        # CREATED_TIME: lambda value: {'created_time': value}, # Not supported for inserts.
+        DATE: lambda value: {'date': {'start': value}},
+        EMAIL: lambda value: {'email': value},
+        # FILES: {}  # TODO
+        # FORMULA: {},  # TODO
+        # LAST_EDITED_BY: {}, # Not supported for inserts.
+        # LAST_EDITED_TIME: {}, # Not supported for inserts.
+        # MULTI_SELECT: {} # TODO
+        NUMBER: lambda value: {'number': value},
+        # PEOPLE: {}, # TODO
+        PHONE_NUMBER: lambda value: {'phone_number': value},
+        RELATION: {},  # TODO
+        RICH_TEXT: lambda value: {'rich_text': [{'text': {'content': value}}]},
+        ROLLUP: {},  # Not supported for inserts.
+        SELECT: lambda value: {'select': {'name': value}},
+        STATUS: lambda value: {'status': {'name': value}},
+        TITLE: lambda value: {'title': [{'text': {'content': value}}]},
+        URL: lambda value: {'url': value},
+    }
 
-class NotionDatabaseColumn(BaseModel):
+    def get_insert_payload(self, data: Any):
+        """
+        Formats the provided data into a dictionary representation based on the column type that can be used to
+        create or update a database entry.
+        The data is expected to be in the format that the Notion API accepts for this column type.
+        """
+        self.__data_templates: dict[NotionColumnType, Callable[[Any], dict]]
+
+        if self.value not in self.__data_templates:
+            raise ValueError(f"Unsupported column type: {self}")
+
+        return self.__data_templates[self.value](data)
+
+
+class NotionDatabaseColumn(NotionModel):
     id: str
     name: str
     type: NotionColumnType
 
 
-class NotionDatabase(BaseModel):
+class NotionDatabase(NotionModel):
     id: UUID4 | UuidString = Field(..., validation_alias='id')
     names: DatabaseTitleField = Field(..., validation_alias='title')
     properties: Annotated[

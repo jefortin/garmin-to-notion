@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timezone
 from functools import cached_property
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, NaiveDatetime, AliasPath, HttpUrl, computed_field, BeforeValidator
+from pydantic import Field, NaiveDatetime, AliasPath, HttpUrl, computed_field, BeforeValidator
 from pydantic.experimental.pipeline import validate_as
 
-from _distance import DistanceUnit, Distance
-from _pace import Pace
-from _speed import Speed
-from _time import TimeUnit
+from src.core.garmin import GarminModel
+from src.core.types import Pace, Speed, TimeUnit, Duration, DistanceUnit, Distance
 
 # region utilities
 
@@ -75,8 +73,8 @@ def parse_distance_field(distance_meters: float) -> Distance:
     return Distance(distance_meters, DistanceUnit.METER)
 
 
-def parse_duration_field(duration_seconds: float) -> timedelta:
-    return timedelta(seconds=duration_seconds)
+def parse_duration_field(duration_seconds: float) -> Duration:
+    return Duration(seconds=duration_seconds)
 
 
 def parse_speed_field(speed_meter_per_second: float) -> Speed:
@@ -98,14 +96,14 @@ GmtDateTimeField = Annotated[datetime, validate_as(NaiveDatetime).transform(pars
 TrainingEffectField = Annotated[Optional[str], BeforeValidator(parse_training_effect_label)]
 MetabolismEffectField = Annotated[Optional[str], BeforeValidator(parse_metabolism_effect)]
 DistanceField = Annotated[Distance, validate_as(float).transform(parse_distance_field)]
-DurationField = Annotated[timedelta, validate_as(float).transform(parse_duration_field)]
+DurationField = Annotated[Duration, validate_as(float).transform(parse_duration_field)]
 SpeedField = Annotated[Speed, validate_as(float).transform(parse_speed_field)]
 PaceField = Annotated[Pace, validate_as(float).transform(parse_pace_from_speed)]
 
 
 # endregion custom fields
 
-class GarminActivity(BaseModel):
+class GarminActivity(GarminModel):
     """
     Describes the data of a Garmin activity entry.
     TODO: This model is not exhaustive, but only implements the currently used fields. Adjust the model as needed.
@@ -132,4 +130,4 @@ class GarminActivity(BaseModel):
     @computed_field
     @cached_property
     def icon_url(self) -> HttpUrl | None:
-        return ACTIVITY_ICONS.get(self.activity_type)
+        return ACTIVITY_ICONS.get(self.type)
