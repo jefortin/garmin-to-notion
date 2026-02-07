@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from garminconnect import Garmin as GarminClient
 from notion_client import Client as NotionClient
 
+from models import ActivityListResponse, ActivityResponse
 from src.helpers import get_garmin_client, get_notion_client
 
 # Your local time zone, replace with the appropriate one if needed
@@ -33,8 +34,8 @@ ACTIVITY_ICONS = {
 }
 
 
-def get_all_activities(garmin_client: GarminClient, limit: int = 1000) -> list[dict]:
-    return garmin_client.get_activities(0, limit)
+def get_activities(garmin_client: GarminClient, limit: int = 1000) -> ActivityListResponse:
+    return ActivityListResponse.model_validate(garmin_client.get_activities(0, limit))
 
 
 def format_activity_type(activity_type: str, activity_name: str = "") -> tuple[str, str]:
@@ -287,6 +288,21 @@ def update_activity(notion_client: NotionClient, existing_activity: dict, new_ac
     notion_client.pages.update(**update)
 
 
+def _sync_activity(
+    garmin_client: GarminClient,
+    notion_client: NotionClient,
+    notion_activity_database_id: str,
+    garmin_activity: ActivityResponse,
+):
+    """
+    Sync a single Garmin activity to Notion.
+    - Creates a new activity if it doesn't exist in Notion.
+    - Updates the activity if it already exists in Notion but the existing data doesn't match the received data.
+    - Does nothing if the activity already exists in Notion and the existing data matches the received data.
+    """
+    pass
+
+
 def main():
     load_dotenv()
 
@@ -297,7 +313,7 @@ def main():
     database_id = notion_dbs.activities
 
     # Get all activities
-    activities = get_all_activities(garmin_client, garmin_configuration.activity_fetch_limit)
+    activities = get_activities(garmin_client, garmin_configuration.activity_fetch_limit)
 
     # Process all activities
     for activity in activities:

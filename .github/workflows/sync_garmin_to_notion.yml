@@ -45,7 +45,7 @@ jobs:
           GARMIN_ACTIVITIES_FETCH_LIMIT: ${{ vars.GARMIN_ACTIVITIES_FETCH_LIMIT }}
           TZ: 'America/Montreal'
         run: |
-          python -m src.workflows.garmin-activities
-          python -m src.workflows.personal-records
-          python -m src.workflows.daily-steps
-          python -m src.workflows.sleep-data
+          python -m src.workflows.garmin_activities
+          python -m src.workflows.personal_records
+          python -m src.workflows.daily_steps
+          python -m src.workflows.sleep_data
