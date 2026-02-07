@@ -212,18 +212,18 @@ def create_activity(notion_client: NotionClient, database_id: str, activity: dic
         "Activity Type": {"select": {"name": activity_type}},
         "Subactivity Type": {"select": {"name": activity_subtype}},
         "Activity Name": {"title": [{"text": {"content": activity_name}}]},
-        "Distance (km)": {"number": round(activity.get('distance', 0) / 1000, 2)},
-        "Duration (min)": {"number": round(activity.get('duration', 0) / 60, 2)},
-        "Calories": {"number": round(activity.get('calories', 0))},
-        "Avg Pace": {"rich_text": [{"text": {"content": format_pace(activity.get('averageSpeed', 0))}}]},
-        "Avg Power": {"number": round(activity.get('avgPower', 0), 1)},
-        "Max Power": {"number": round(activity.get('maxPower', 0), 1)},
+        "Distance (km)": {"number": round(activity.get('distance', 0.0) / 1000, 2)},
+        "Duration (min)": {"number": round(activity.get('duration', 0.0) / 60, 2)},
+        "Calories": {"number": round(activity.get('calories', 0.0))},
+        "Avg Pace": {"rich_text": [{"text": {"content": format_pace(activity.get('averageSpeed', 0.0))}}]},
+        "Avg Power": {"number": round(activity.get('avgPower', 0.0), 1)},
+        "Max Power": {"number": round(activity.get('maxPower', 0.0), 1)},
         "Training Effect": {"select": {"name": format_training_effect(activity.get('trainingEffectLabel', 'Unknown'))}},
-        "Aerobic": {"number": round(activity.get('aerobicTrainingEffect', 0), 1)},
+        "Aerobic": {"number": round(activity.get('aerobicTrainingEffect', 0.0), 1)},
         "Aerobic Effect": {
             "select": {"name": format_training_message(activity.get('aerobicTrainingEffectMessage', 'Unknown'))}
         },
-        "Anaerobic": {"number": round(activity.get('anaerobicTrainingEffect', 0), 1)},
+        "Anaerobic": {"number": round(activity.get('anaerobicTrainingEffect', 0.0), 1)},
         "Anaerobic Effect": {
             "select": {"name": format_training_message(activity.get('anaerobicTrainingEffectMessage', 'Unknown'))}
         },
