@@ -2,7 +2,9 @@ from datetime import date, timedelta
 
 from dotenv import load_dotenv
 
-from src.helpers import get_garmin_client, get_notion_client
+from garmin import get_garmin_client
+from notion import get_notion_client
+from .configuration import get_workflow_configuration
 
 
 def get_all_daily_steps(garmin):
@@ -99,6 +101,7 @@ def main():
     load_dotenv()
 
     # Initialize Garmin and Notion clients using environment variables
+    workflow_configuration = get_workflow_configuration()
     garmin_client, _ = get_garmin_client()
     notion_client, notion_configuration = get_notion_client()
 

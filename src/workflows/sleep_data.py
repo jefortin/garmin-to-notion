@@ -3,7 +3,9 @@ from datetime import datetime
 import pytz
 from dotenv import load_dotenv, dotenv_values
 
-from src.helpers import get_garmin_client, get_notion_client
+from garmin import get_garmin_client
+from notion import get_notion_client
+from workflows.configuration import get_workflow_configuration
 
 # Constants
 local_tz = pytz.timezone("America/New_York")
@@ -66,11 +68,20 @@ def create_sleep_data(client, database_id, sleep_data, skip_zero_sleep=True):
 
     properties = {
         "Date": {"title": [{"text": {"content": format_date_for_name(sleep_date)}}]},
-        "Times": {"rich_text": [{"text": {
-            "content": f"{format_time_readable(daily_sleep.get('sleepStartTimestampGMT'))} → {format_time_readable(daily_sleep.get('sleepEndTimestampGMT'))}"}}]},
+        "Times": {
+            "rich_text": [{
+                "text": {
+                    "content": f"{format_time_readable(daily_sleep.get('sleepStartTimestampGMT'))} → {format_time_readable(daily_sleep.get('sleepEndTimestampGMT'))}"
+                }
+            }]
+        },
         "Long Date": {"date": {"start": sleep_date}},
-        "Full Date/Time": {"date": {"start": format_time(daily_sleep.get('sleepStartTimestampGMT')),
-                                    "end": format_time(daily_sleep.get('sleepEndTimestampGMT'))}},
+        "Full Date/Time": {
+            "date": {
+                "start": format_time(daily_sleep.get('sleepStartTimestampGMT')),
+                "end": format_time(daily_sleep.get('sleepEndTimestampGMT'))
+            }
+        },
         "Total Sleep (h)": {"number": round(total_sleep / 3600, 1)},
         "Light Sleep (h)": {"number": round(daily_sleep.get('lightSleepSeconds', 0) / 3600, 1)},
         "Deep Sleep (h)": {"number": round(daily_sleep.get('deepSleepSeconds', 0) / 3600, 1)},
@@ -92,6 +103,7 @@ def main():
     load_dotenv()
 
     # Initialize Garmin and Notion clients using environment variables
+    workflow_configuration = get_workflow_configuration()
     garmin_client, _ = get_garmin_client()
     notion_client, notion_configuration = get_notion_client()
 

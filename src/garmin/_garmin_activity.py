@@ -3,7 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, SecretStr, HttpUrl, TypeAdapter
 
-from .notion_activity import NotionActivity, TrainingEffect, TrainingEffectLabel, PaceMinKm
+from src.notion import NotionActivity, TrainingEffect, TrainingEffectLabel, PaceMinKm
 
 ACTIVITY_ICONS: dict[str, HttpUrl] = {
     "Barre": HttpUrl("https://img.icons8.com/?size=100&id=66924&format=png&color=000000"),

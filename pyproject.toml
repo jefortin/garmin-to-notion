@@ -1,0 +1,16 @@
+[project]
+name = "garmin-to-notion"
+version = "0.1.0"
+description = "Utility for syncing garmin data to a Notion database."
+requires-python = ">=3.11"
+dependencies = [
+    "datetime==5.5",
+    "garminconnect>=0.2.19,<0.3",
+    "lxml>=4.6.0,<5.0",
+    "notion-client==2.2.1",
+    "pydantic>=2.0.0",
+    "pytest==9.0.2",
+    "python-dotenv>=1.2.1",
+    "pytz==2024.1",
+    "withings-sync==4.2.4",
+]

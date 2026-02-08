@@ -2,7 +2,9 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from src.helpers import get_garmin_client, get_notion_client
+from garmin import get_garmin_client
+from notion import get_notion_client
+from workflows.configuration import get_workflow_configuration
 
 
 def get_icon_for_record(activity_name):
@@ -251,6 +253,7 @@ def main():
     load_dotenv()
 
     # Initialize Garmin and Notion clients using environment variables
+    workflow_configuration = get_workflow_configuration()
     garmin_client, _ = get_garmin_client()
     notion_client, notion_configuration = get_notion_client()
 

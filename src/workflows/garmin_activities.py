@@ -1,10 +1,9 @@
 from garminconnect import Garmin as GarminClient
 from notion_client import Client as NotionClient
 
-from helpers import get_workflow_configuration, GarminConfiguration, NotionConfiguration, WorkflowConfiguration
-from models import ActivityListResponse, ActivityResponse
-from models.notion_activity import NotionActivity
-from src.helpers import get_garmin_client, get_notion_client
+from garmin import GarminConfiguration, get_garmin_client, ActivityResponse, ActivityListResponse
+from notion import NotionConfiguration, get_notion_client, NotionActivity
+from workflows.configuration import WorkflowConfiguration, get_workflow_configuration
 
 
 class GarminActivitySynchronizer:
