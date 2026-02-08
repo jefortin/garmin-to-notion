@@ -1,9 +1,9 @@
 from datetime import datetime, UTC
 from typing import List
 
-from pydantic import BaseModel, SecretStr, HttpUrl
+from pydantic import BaseModel, SecretStr, HttpUrl, TypeAdapter
 
-from models.notion_activity import NotionActivity, TrainingEffect
+from .notion_activity import NotionActivity, TrainingEffect, TrainingEffectLabel, PaceMinKm
 
 ACTIVITY_ICONS: dict[str, HttpUrl] = {
     "Barre": HttpUrl("https://img.icons8.com/?size=100&id=66924&format=png&color=000000"),
@@ -243,32 +243,40 @@ class ActivityResponse(BaseModel):
         )
         activity_type, activity_subtype = self.__activity_type_tuple
         icon_url = ACTIVITY_ICONS.get(activity_subtype)
+        formatted_training_effect = (self.trainingEffectLabel or "Unknown").replace('_', ' ').title()
+        # Garmin's "Entertainment" activity type is often used for Netflix workouts.
+        formatted_activity_name = self.activityName.replace('ENTERTAINMENT', 'Netflix')
+
+        pace_min_per_km = 1000 / (self.averageSpeed * 60) if self.averageSpeed > 0 else 0  # Convert to min/km
 
         return NotionActivity(
             timestamp=parsed_timestamp,
-            name=self.activityName,
+            name=formatted_activity_name,
             type=activity_type,
             subtype=activity_subtype,
             icon_url=icon_url,
             distance_km=self.distance / 1000,  # Convert meters to kilometers
             duration_minutes=self.duration / 60,  # Convert seconds to minutes
             calories=self.calories,
-            avg_pace_min_km=1000 / (self.averageSpeed * 60) if self.averageSpeed > 0 else 0,  # Convert to min/km
+            avg_pace_min_km=PaceMinKm(pace_min_per_km=pace_min_per_km),
             avg_power=self.avgPower or 0,
             max_power=self.maxPower or 0,
-            training_effect=self.trainingEffectLabel or "Unknown",  # TODO: Use enum?
+            training_effect=formatted_training_effect,  # TODO: Use enum if we can get a list of possible values.
             aerobic_effect=TrainingEffect(
                 score=self.aerobicTrainingEffect or 0,
-                label=self.aerobicTrainingEffectMessage or "Unknown"  # TODO: Use enum?
+                label=TrainingEffectLabel.UNKNOWN
+                if not self.aerobicTrainingEffectMessage
+                else TrainingEffectLabel.from_garmin_message(self.aerobicTrainingEffectMessage)
             ),
             anaerobic_effect=TrainingEffect(
                 score=self.anaerobicTrainingEffect or 0,
-                label=self.anaerobicTrainingEffectMessage or "Unknown"  # TODO: Use enum?
+                label=TrainingEffectLabel.UNKNOWN
+                if not self.anaerobicTrainingEffectMessage
+                else TrainingEffectLabel.from_garmin_message(self.anaerobicTrainingEffectMessage)
             ),
             is_personal_record=self.pr,
             is_favorite=self.favorite
         )
 
 
-class ActivityListResponse(BaseModel):
-    activities: List[ActivityResponse]
+ActivityListResponse = TypeAdapter(list[ActivityResponse])

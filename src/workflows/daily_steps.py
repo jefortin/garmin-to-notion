@@ -100,9 +100,9 @@ def main():
 
     # Initialize Garmin and Notion clients using environment variables
     garmin_client, _ = get_garmin_client()
-    notion_client, notion_dbs = get_notion_client()
+    notion_client, notion_configuration = get_notion_client()
 
-    database_id = notion_dbs.daily_steps
+    database_id = notion_configuration.daily_steps_database_id
 
     daily_steps = get_all_daily_steps(garmin_client)
     for steps in daily_steps:

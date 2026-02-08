@@ -252,9 +252,9 @@ def main():
 
     # Initialize Garmin and Notion clients using environment variables
     garmin_client, _ = get_garmin_client()
-    notion_client, notion_dbs = get_notion_client()
+    notion_client, notion_configuration = get_notion_client()
 
-    database_id = notion_dbs.personal_records
+    database_id = notion_configuration.personal_records_database_id
 
     records: list[dict[str, Any]] = garmin_client.get_personal_record()  # type hint is wrong in the library.
     filtered_records = [record for record in records if record.get('typeId') != 16]

@@ -7,6 +7,8 @@ class TestParseGarminActivities:
         """
         Uses the actual activity fetch flow and checks that all fetched activities can be parsed into the
         ActivityResponse model without errors.
+
+        Run this to diagnose any parsing issues.
         """
 
         garmin_client, garmin_configuration = get_garmin_client()

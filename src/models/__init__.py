@@ -9,6 +9,7 @@ from .garmin_activity import (
 
 __all__ = [
     "ActivityResponse",
+    "ActivityListResponse",
     "ActivityType",
     "EventType",
     "Privacy",
